@@ -1,0 +1,500 @@
+;; Verified public-register citations for the legal entity archived by this repository.
+;;
+;; Every row is checked live by tools/verify_citations.cljs:
+;;   * GET :cite/url must answer HTTP 2xx
+;;   * :cite/expect-substring must appear in the response body
+;;
+;; A URL that cannot be fetched, or whose body no longer carries the claim, is a
+;; DRIFT and fails the gate. Nothing is recorded here that was not retrieved.
+;;
+;; THREE independent authorities are cited, not one:
+;;   * GLEIF, the global LEI system
+;;   * the United States, via the SEC's EDGAR submissions API (Banco Santander is
+;;     a foreign private issuer, NYSE ticker SAN, CIK 0000891478)
+;;   * the issuer itself, at its own published website www.santander.com -- the
+;;     legal notice this repository archives (80-data/public/tos.journal.edn)
+;;
+;; WHY NO SPANISH STATE REGISTER IS CITED DIRECTLY. GLEIF names RA000535 -- the
+;; Tax Agency, Agencia Tributaria (AEAT) -- as BOTH the register of record and
+;; the validation authority for this entity (rows gleif-registered-at and
+;; gleif-validated-at), and the registered-as A39000013 is the Spanish tax
+;; number (NIF), not a company-register number. AEAT publishes no per-entity
+;; GET URL: NIF census lookups run behind certificate-authenticated flows
+;; (sede.agenciatributaria.gob.es answered 200 to this gate on 2026-08-22, but
+;; only with its portal page). The company-law register the issuer itself
+;; names -- the Santander Mercantile Registry, sheet 286, folio 64, Companies
+;; Book no. 5, entry 1 -- publishes per-entity data behind paid/POST flows at
+;; registradores.org (top page 200 to this gate, 2026-08-22; no stable
+;; per-entity GET URL). The Banco de Espana credit-institution register (code
+;; 0049) likewise offers no stable per-entity GET URL this gate can replay.
+;; What the catalog does instead is cite the issuer's OWN legal notice, which
+;; prints the tax number, the registered office, the Banco de Espana code and
+;; the Mercantile Registry entry in a single sentence (rows issuer-bde-number,
+;; issuer-seat, issuer-tax-number, issuer-mercantile), and corroborate the
+;; entity through a second STATE authority that does answer on stable URLs:
+;;
+;;   GLEIF says the legal seat is PASEO DE PEREDA 9-12, SANTANDER, ES-S, 39004
+;;   (rows gleif-address, gleif-city, gleif-postal) -> the issuer prints
+;;   'registered office at Paseo de Pereda, 9-12, Santander'. GLEIF records
+;;   registeredAs A39000013 -> the issuer prints 'tax number A-39000013'.
+;;   GLEIF records the legal name BANCO SANTANDER S.A. -> the SEC prints
+;;   Banco Santander, S.A. as the registrant name, incorporated in Spain,
+;;   NYSE ticker SAN. The SEC and GLEIF never consulted each other.
+;;
+;; ONE HONEST WRINKLE, SO A READER DOES NOT MISREAD IT AS DRIFT: the SEC's
+;; business address is CIUDAD GRUPO SANTANDER, BOADILLA DEL MONTE, MADRID
+;; 28660 -- the operational corporate centre -- while GLEIF and the issuer's
+;; legal notice both give the REGISTERED office in the city of Santander.
+;; Both are true; they are different facts (rows sec-street, sec-street2).
+;; Note also gleif-corroboration: this record is PARTIALLY_CORROBORATED, not
+;; FULLY_CORROBORATED. The catalog records what GLEIF says, not more.
+;;
+;; WHAT IS DELIBERATELY NOT CITED. GLEIF's nextRenewalDate and lastUpdateDate
+;; move by construction; a row on either would go red on schedule while saying
+;; nothing about the entity. The GLEIF ISIN mapping carries 6,189 ISINs for
+;; this serial note issuer and moves by construction too; measured 2026-08-22,
+;; the endpoint's filter[isin] parameter is not honored (it returned the full
+;; unfiltered set), so no per-ISIN row is possible and no count row is wanted.
+;; NYSE quote pages sit behind JS/POST-gated APIs and are not citations.
+;;
+;; :cite/row-kind is the honest part of this catalog and should be read before
+;; the claims:
+;;
+;;   :identity   the substring names this entity, its identifiers, or a specific
+;;               related legal entity (two of the 79 direct children, the BIC,
+;;               the MICs). Point the URL at a different company and the row
+;;               fails.
+;;   :attribute  the substring is TRUE OF THIS ENTITY BUT NOT ONLY OF IT (status
+;;               ACTIVE, country ES, SIC 6029, fiscal year 1231). Such a row can
+;;               survive a swap to a similar company. It is recorded because it
+;;               is checked and true, not because it identifies.
+;;   :definition the row resolves a code used by another row (RA000535, ELF
+;;               5RDO, the managing LOU). It says the named register, legal
+;;               form or LEI issuer exists; it says nothing about Santander.
+;;
+;; Of the entries below, 29 are :identity, 26 are :attribute and 8 are
+;; :definition. A reader who treats all 63 as identifying would overstate what
+;; this catalog proves -- which is the error this field exists to prevent.
+;;
+;; Substrings are taken from the RAW response body and were each checked against
+;; the fetched bytes before this file was written (2026-08-22, GLEIF golden copy
+;; of 2026-08-21). The child-count row goes red when GLEIF adds or removes a
+;; relationship; that is correct DRIFT, not a false alarm. GLEIF escapes URL
+;; slashes in its JSON (es\/39000013, https:\/\/...); the ocid and lou-website
+;; rows match that raw escaped form deliberately. The issuer's legal-notice
+;; <title> begins with a literal space; the row keeps it.
+{:catalog/subject
+ #:company{:legal-name "BANCO SANTANDER S.A."
+           :lei "5493006QMFDDMYWIAM13"
+           :jurisdiction "ES"
+           :registered-at "RA000535"
+           :registered-as "A39000013"
+           :legal-form "5RDO"
+           :website "https://www.santander.com/en/home"}
+ :catalog/authorities
+ [{:authority/id :gleif
+   :authority/name "Global Legal Entity Identifier Foundation"
+   :authority/root "https://api.gleif.org/"}
+  {:authority/id :us-sec
+   :authority/name "U.S. Securities and Exchange Commission, EDGAR"
+   :authority/root "https://data.sec.gov/"}
+  {:authority/id :issuer
+   :authority/name "Banco Santander S.A., at its own published website"
+   :authority/root "https://www.santander.com/"}]
+ :catalog/unreachable
+ [{:unreachable/authority "Agencia Tributaria (AEAT), RA000535, register of record"
+   :unreachable/url "https://sede.agenciatributaria.gob.es/"
+   :unreachable/observed "portal answers HTTP 200 (2026-08-22) but NIF census lookups run behind certificate-authenticated flows; no per-entity GET URL"
+   :unreachable/consequence "The register GLEIF names as this entity's register of record and validation authority is NOT cited below. The NIF A39000013 rests on GLEIF plus the issuer's own printed tax number (row issuer-tax-number)."}
+  {:unreachable/authority "Registro Mercantil (Santander Mercantile Registry) via registradores.org"
+   :unreachable/url "https://www.registradores.org/"
+   :unreachable/observed "top page answers HTTP 200 (2026-08-22); per-entity company-register extracts sit behind paid/POST flows"
+   :unreachable/consequence "The company-law register entry (sheet 286, folio 64, Companies Book no. 5, entry 1) is cited only as the issuer's own statement (row issuer-mercantile), not from the register itself."}
+  {:unreachable/authority "Banco de Espana credit-institution register (entity code 0049)"
+   :unreachable/url "https://www.bde.es/"
+   :unreachable/observed "no stable per-entity GET URL for the register this gate can replay"
+   :unreachable/consequence "The banking-register code 0049 is cited only as the issuer's own statement (row issuer-bde-number)."}]
+ :catalog/entries
+ [
+  {:cite/id "gleif-lei"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"lei\":\"5493006QMFDDMYWIAM13\""
+   :cite/claim "GLEIF issues LEI 5493006QMFDDMYWIAM13."}
+  {:cite/id "gleif-legal-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"legalName\":{\"name\":\"BANCO SANTANDER S.A.\",\"language\":\"en\"}"
+   :cite/claim "The legal name on that LEI is BANCO SANTANDER S.A., recorded in English. Corroborated independently by sec-name."}
+  {:cite/id "gleif-previous-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "{\"name\":\"BANCO DE SANTANDER SA.\",\"language\":\"en\",\"type\":\"PREVIOUS_LEGAL_NAME\"}"
+   :cite/claim "GLEIF keeps the previous legal name BANCO DE SANTANDER SA. on record."}
+  {:cite/id "gleif-name-change-event"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"type\":\"CHANGE_LEGAL_NAME\""
+   :cite/claim "A CHANGE_LEGAL_NAME event (effective 2024-05-20, validated by ACCOUNTS_FILING) explains why the previous name exists."}
+  {:cite/id "gleif-registered-as"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"registeredAs\":\"A39000013\""
+   :cite/claim "The register of record carries this entity as A39000013 -- the Spanish tax number (NIF). The issuer prints the same number itself (row issuer-tax-number)."}
+  {:cite/id "gleif-validated-as"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"validatedAs\":\"A39000013\""
+   :cite/claim "The LOU validated the registration against the same NIF, not a different one."}
+  {:cite/id "gleif-registered-at"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"registeredAt\":{\"id\":\"RA000535\""
+   :cite/claim "The register of record is RA000535. Resolved by the gleif-ra-* definition rows; NOT directly citable (see :catalog/unreachable)."}
+  {:cite/id "gleif-validated-at"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"validatedAt\":{\"id\":\"RA000535\""
+   :cite/claim "The validation authority is the same register, RA000535."}
+  {:cite/id "gleif-address"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"addressLines\":[\"PASEO DE PEREDA 9-12\"]"
+   :cite/claim "The legal seat is Paseo de Pereda 9-12. The issuer prints the same registered office in its legal notice (row issuer-seat)."}
+  {:cite/id "gleif-city"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"city\":\"SANTANDER\""
+   :cite/claim "The legal seat city is Santander -- the city the bank is named after, not Madrid (see the header note on the SEC business address)."}
+  {:cite/id "gleif-region"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"region\":\"ES-S\""
+   :cite/claim "The legal seat region is ES-S, Cantabria (province of Santander)."}
+  {:cite/id "gleif-postal"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"postalCode\":\"39004\""
+   :cite/claim "The legal seat postal code is 39004 (Santander)."}
+  {:cite/id "gleif-jurisdiction"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"jurisdiction\":\"ES\""
+   :cite/claim "The jurisdiction is Spain."}
+  {:cite/id "gleif-legal-form"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"legalForm\":{\"id\":\"5RDO\""
+   :cite/claim "The entity legal form is ELF code 5RDO. Resolved by the gleif-elf-* definition rows to Sociedad Anonima."}
+  {:cite/id "gleif-category"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"category\":\"GENERAL\""
+   :cite/claim "The LEI entity category is GENERAL (not BRANCH, FUND or SOLE_PROPRIETOR) -- this record is the parent legal entity itself."}
+  {:cite/id "gleif-status-active"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"status\":\"ACTIVE\""
+   :cite/claim "The entity status is ACTIVE."}
+  {:cite/id "gleif-reg-status-issued"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"status\":\"ISSUED\""
+   :cite/claim "The LEI registration status is ISSUED (also matches the entity ACTIVE row; both are checked)."}
+  {:cite/id "gleif-creation-date"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"creationDate\":\"1857-01-01T00:00:00Z\""
+   :cite/claim "GLEIF records the entity creation date as 1857-01-01 -- the bank's founding year, 169 years before this catalog was written."}
+  {:cite/id "gleif-initial-registration"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"initialRegistrationDate\":\"2013-12-19T03:23:00Z\""
+   :cite/claim "The LEI itself was first issued 2013-12-19."}
+  {:cite/id "gleif-managing-lou"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"managingLou\":\"213800WAVVOPS85N2205\""
+   :cite/claim "The managing LOU is 213800WAVVOPS85N2205. Resolved by the gleif-lou-* definition rows to London Stock Exchange LEI Limited."}
+  {:cite/id "gleif-corroboration"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"corroborationLevel\":\"PARTIALLY_CORROBORATED\""
+   :cite/claim "The registration is PARTIALLY_CORROBORATED -- not FULLY. Recorded as-is; this catalog does not overstate what GLEIF says."}
+  {:cite/id "gleif-conformity"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"conformityFlag\":\"CONFORMING\""
+   :cite/claim "The LEI record's conformity flag is CONFORMING."}
+  {:cite/id "gleif-bic-es"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"BSCHESMMXXX\""
+   :cite/claim "The SWIFT BIC BSCHESMMXXX -- the bank's primary Spain BIC -- maps to this LEI. The full mapping carries 13 BICs across Germany, the UK, Hong Kong, Italy, the Netherlands, Singapore and the US; only the stable Spanish one is pinned here."}
+  {:cite/id "gleif-mic"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"mic\":[\"BSLB\",\"SANT\"]"
+   :cite/claim "Two market identifier codes (MIC) map to this LEI: BSLB and SANT."}
+  {:cite/id "gleif-ocid"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"ocid\":\"es\\/39000013\""
+   :cite/expect-note "GLEIF escapes the slash; the raw bytes are es\\/39000013 -- this row keeps that encoding fact checked"
+   :cite/claim "The OpenCorporates identifier is es/39000013 -- the numeric part of the NIF, in a third identifier system."}
+  {:cite/id "gleif-gem"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"gem\":\"E100002017821\""
+   :cite/claim "The GLEIF Entity Master identifier E100002017821 maps to this LEI."}
+  {:cite/id "gleif-spglobal"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13"
+   :cite/expect-substring "\"spglobal\":[\"323930\"]"
+   :cite/claim "S&P Global's company identifier 323930 maps to this LEI."}
+  {:cite/id "gleif-no-parent-category"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-parent-reporting-exception"
+   :cite/expect-substring "\"category\":\"DIRECT_ACCOUNTING_CONSOLIDATION_PARENT\""
+   :cite/claim "For the direct accounting-consolidation parent, GLEIF holds a reporting exception, not a parent record."}
+  {:cite/id "gleif-no-parent-reason"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-parent-reporting-exception"
+   :cite/expect-substring "\"reason\":\"NON_CONSOLIDATING\""
+   :cite/claim "The exception reason is NON_CONSOLIDATING -- no entity consolidates Banco Santander; it is the top of its accounting group."}
+  {:cite/id "gleif-child-count"
+   :cite/authority :gleif
+   :cite/row-kind :attribute
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"total\":79"
+   :cite/claim "GLEIF relationship records name exactly 79 direct children. Goes red when GLEIF adds or removes one -- correct DRIFT. page[size]=200 keeps all 79 in one response so the child rows below match the same body."}
+  {:cite/id "gleif-child-shusa-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"name\":\"Santander Holdings USA, Inc.\""
+   :cite/claim "Santander Holdings USA, Inc. -- the US intermediate holding company, itself an SEC registrant -- reports Banco Santander as its direct parent."}
+  {:cite/id "gleif-child-shusa-lei"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"lei\":\"549300SMVCQN2P0O6I58\""
+   :cite/claim "That child's own LEI is 549300SMVCQN2P0O6I58."}
+  {:cite/id "gleif-child-ukgh-name"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"name\":\"SANTANDER UK GROUP HOLDINGS PLC\""
+   :cite/claim "Santander UK Group Holdings plc -- the UK intermediate holding company -- reports Banco Santander as its direct parent."}
+  {:cite/id "gleif-child-ukgh-lei"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"lei\":\"549300F5XIFGNNW4CF72\""
+   :cite/claim "That child's own LEI is 549300F5XIFGNNW4CF72."}
+  {:cite/id "gleif-child-ukgh-companies-house"
+   :cite/authority :gleif
+   :cite/row-kind :identity
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/direct-children?page%5Bsize%5D=200"
+   :cite/expect-substring "\"registeredAs\":\"08700698\""
+   :cite/claim "The UK child carries its own Companies House number 08700698 -- a UK register anchor, distinct from the parent's Spanish NIF."}
+  {:cite/id "gleif-ra-org"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000535"
+   :cite/expect-substring "\"internationalOrganizationName\":\"Tax Agency\""
+   :cite/claim "RA000535 is kept by the Tax Agency. This row defines the code; it says nothing about Santander."}
+  {:cite/id "gleif-ra-local"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000535"
+   :cite/expect-substring "\"localOrganizationName\":\"Agencia Tributaria (AEAT)\""
+   :cite/claim "Locally, that is the Agencia Tributaria (AEAT), Spain."}
+  {:cite/id "gleif-ra-website"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/registration-authorities/RA000535"
+   :cite/expect-substring "\"website\":\"www.agenciatributaria.es\""
+   :cite/claim "GLEIF records the register's website as www.agenciatributaria.es -- the agency :catalog/unreachable documents as certificate-gated per entity."}
+  {:cite/id "gleif-elf-name"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/entity-legal-forms/5RDO"
+   :cite/expect-substring "\"localName\":\"Sociedad Anonima\""
+   :cite/claim "ELF code 5RDO means Sociedad Anonima -- the S.A. in the legal name. This row defines the code used by gleif-legal-form."}
+  {:cite/id "gleif-elf-country"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/entity-legal-forms/5RDO"
+   :cite/expect-substring "\"country\":\"Spain\""
+   :cite/claim "5RDO is a Spanish legal form."}
+  {:cite/id "gleif-lou-name"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/lei-issuer"
+   :cite/expect-substring "\"name\":\"London Stock Exchange LEI Limited\""
+   :cite/claim "The managing LOU 213800WAVVOPS85N2205 is London Stock Exchange LEI Limited."}
+  {:cite/id "gleif-lou-marketing"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/lei-issuer"
+   :cite/expect-substring "\"marketingName\":\"London Stock Exchange\""
+   :cite/claim "It trades as the London Stock Exchange (LSEG group)."}
+  {:cite/id "gleif-lou-website"
+   :cite/authority :gleif
+   :cite/row-kind :definition
+   :cite/url "https://api.gleif.org/api/v1/lei-records/5493006QMFDDMYWIAM13/lei-issuer"
+   :cite/expect-substring "\"website\":\"https:\\/\\/www.lseg.com\\/LEI\""
+   :cite/expect-note "raw GLEIF bytes escape the slashes"
+   :cite/claim "The LOU's website is www.lseg.com/LEI."}
+  {:cite/id "sec-name"
+   :cite/authority :us-sec
+   :cite/row-kind :identity
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"name\":\"Banco Santander, S.A.\""
+   :cite/claim "The SEC's registrant record prints Banco Santander, S.A. -- the same legal name GLEIF records, in the SEC's own punctuation. The two never consulted each other."}
+  {:cite/id "sec-cik"
+   :cite/authority :us-sec
+   :cite/row-kind :identity
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"cik\":\"0000891478\""
+   :cite/claim "The SEC knows this registrant as CIK 0000891478."}
+  {:cite/id "sec-ticker"
+   :cite/authority :us-sec
+   :cite/row-kind :identity
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"tickers\":[\"SAN\",\"BCDRF\"]"
+   :cite/claim "The registrant's tickers are SAN (NYSE ADS) and BCDRF (OTC)."}
+  {:cite/id "sec-exchange"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"exchanges\":[\"NYSE\",\"OTC\"]"
+   :cite/claim "The ADS trade on the NYSE (and BCDRF over the counter)."}
+  {:cite/id "sec-sic"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"sic\":\"6029\""
+   :cite/claim "The SEC classifies the registrant under SIC 6029."}
+  {:cite/id "sec-sic-desc"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"sicDescription\":\"Commercial Banks, NEC\""
+   :cite/claim "SIC 6029 is Commercial Banks, NEC -- a bank, as the issuer's Banco de Espana code 0049 also says."}
+  {:cite/id "sec-incorporation"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"stateOfIncorporationDescription\":\"Spain\""
+   :cite/claim "Incorporated in Spain."}
+  {:cite/id "sec-street"
+   :cite/authority :us-sec
+   :cite/row-kind :identity
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"street1\":\"CIUDAD GRUPO SANTANDER\""
+   :cite/claim "The SEC's business-address record names Ciudad Grupo Santander -- the operational corporate centre. NOT the registered office; see the header wrinkle before reading this as drift."}
+  {:cite/id "sec-street2"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"street2\":\"BOADILLA DEL MONTE\""
+   :cite/claim "...in Boadilla del Monte, outside Madrid."}
+  {:cite/id "sec-zip"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"zipCode\":\"28660\""
+   :cite/claim "The corporate centre's postal code is 28660 (Boadilla del Monte, Madrid)."}
+  {:cite/id "sec-fiscal-year"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"fiscalYearEnd\":\"1231\""
+   :cite/claim "The fiscal year ends 31 December -- the Spanish financial year, unlike the Indian 0331 of the sibling HDFC catalog."}
+  {:cite/id "sec-20f"
+   :cite/authority :us-sec
+   :cite/row-kind :attribute
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"20-F\""
+   :cite/claim "The filings list carries a 20-F -- the annual report form reserved for foreign private issuers."}
+  {:cite/id "sec-phone"
+   :cite/authority :us-sec
+   :cite/row-kind :identity
+   :cite/url "https://data.sec.gov/submissions/CIK0000891478.json"
+   :cite/expect-substring "\"phone\":\"34 91 289 32 80\""
+   :cite/claim "The SEC records a +34 91 Madrid phone number for the registrant."}
+  {:cite/id "issuer-legal-title"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "<title> Legal Notice | Santander Bank</title>"
+   :cite/expect-note "the raw title begins with a literal space; kept as-is"
+   :cite/claim "The page this repository archives (80-data/public/tos.journal.edn, retrieved 2026-07-25) still serves the same Legal Notice title."}
+  {:cite/id "issuer-property"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "Official website of SANTANDER GROUP comprising Banco Santander, S.A. and its subsidiaries."
+   :cite/claim "The issuer states the website is the official website of Santander Group, owned by Banco Santander, S.A."}
+  {:cite/id "issuer-bde-number"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "registered with the Bank of Spain under number 0049"
+   :cite/claim "The issuer prints its Banco de Espana credit-institution code, 0049 -- the banking-register anchor :catalog/unreachable explains cannot be fetched from the register itself."}
+  {:cite/id "issuer-seat"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "registered office at Paseo de Pereda, 9-12, Santander"
+   :cite/claim "The issuer prints the same registered office GLEIF records as the legal seat (rows gleif-address, gleif-city)."}
+  {:cite/id "issuer-tax-number"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "tax number A-39000013"
+   :cite/claim "The issuer prints tax number A-39000013 -- the same NIF GLEIF records as registeredAs (hyphenated in the issuer's own style)."}
+  {:cite/id "issuer-mercantile"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/landing-pages/legal-notice"
+   :cite/expect-substring "registered in the Santander Mercantile Registry, sheet 286, folio 64, Companies Book no. 5, entry 1"
+   :cite/claim "The issuer prints its Mercantile Registry entry -- the company-law register anchor no stable GET URL can serve (see :catalog/unreachable)."}
+  {:cite/id "issuer-home-title"
+   :cite/authority :issuer
+   :cite/row-kind :identity
+   :cite/url "https://www.santander.com/en/home"
+   :cite/expect-substring "<title>Santander Corporate Website</title>"
+   :cite/claim "The issuer's homepage -- the site blueprint.edn records as the entity's website -- titles itself Santander Corporate Website."}
+ ]}
